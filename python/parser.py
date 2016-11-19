@@ -11,8 +11,8 @@ class Parser:
 		
 	def convertSpeechToText(self,audioFile):
 		# Read IBM watson SpeechToText service username and password from config file
-		username= self.configObject.get('username')
-		password =  self.configObject.get('password')
+		username= self.configObject.get('ibm_speech_to_text_service_username')
+		password =  self.configObject.get('ibm_speech_to_text_service_password')
 		# Create SpeechToText service object
 		stt = SpeechToTextV1(username=username, password=password)
 		audio_file = open(audioFile, "rb")
