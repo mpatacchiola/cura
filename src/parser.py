@@ -25,7 +25,7 @@ class Parser:
 		    print(" Here is the audio text :::")
 		    if(len(audio_json_data["results"])!= 0 ):
 		    	audio_text = audio_json_data["results"][0]["alternatives"][0]["transcript"]
-				#return(audio_text)
+			return(audio_text)
 		    else:return(None)
 		    
 		except Exception as e:
