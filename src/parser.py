@@ -32,7 +32,7 @@ class Parser:
                     print "Error was: ",e
 		
 		
-	def extractNumbersFromText(audioText):
+	def extractNumbersFromText(self,audioText):
 		num_dict = ('first','second','third','four','1','2','3','4','one','two','three','fourth','for','zero','0')
 		numberList = list()
 		words = nltk.word_tokenize(audioText)
@@ -57,7 +57,8 @@ class Parser:
 		
 		
 	# to convert number text to integer number
-	def text2int (textnum, numwords={}):
+	def text2int (self, textnum):
+		numwords={}
 		if not numwords:
 			
 				units = [
@@ -98,7 +99,7 @@ class Parser:
 
 								if word not in numwords:
 										if onnumber:
-												curstring += repr(result + current) + " "
+												curstring += (result + current) + " "
 										curstring += word + " "
 										result = current = 0
 										onnumber = False
@@ -112,20 +113,26 @@ class Parser:
 										onnumber = True
 
 				if onnumber:
-						curstring += repr(result + current)
-
-				return curstring
+					curstring += repr(result + current)
+				
+				return int(curstring)
 
 				
-# Condition to check the digit				
-#numbers = extractNumbersFromText(audio_data)
+# Condition to check the digi
+#my_parser = Parser("../config/config.ini")			
+#numbers = my_parser.extractNumbersFromText("the number	one ")
 #print("--- Length of number list---------")
 
+#print(numbers)
 #if(len(numbers) == 0):
-	#outputDigit = -1
+#	outputDigit = -1
 #elif len(numbers) == 1:
-	#print(text2int(numbers[0]))
-#	outputDigit = text2int(numbers[0])
+	
+#	outputDigit = my_parser.text2int(numbers[0])
+#	print(my_parser.text2int(numbers[0]))
 #else:
 #	outputDigit = 0;
-#print(outputDigit)
+#print("outputDigit :",outputDigit)
+
+
+

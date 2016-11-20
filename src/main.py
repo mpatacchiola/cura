@@ -4,12 +4,7 @@ import time
 import math
 import random
 import numpy as np
-import ftplib
-from PIL import Image
 import cv2 
-from datetime import datetime
-import matplotlib.pyplot as plt
-import pyaudio
 import wave
 import subprocess
 from parser import Parser
@@ -28,13 +23,15 @@ from pepper import Puppet
 #Pepper robot global variables
 PEPPER_IP = "127.0.0.1"
 PEPPER_PORT = 48289
+TOTAL_TRIALS = 5
+SIMULATOR = True
 
 #Image resolution
 WIDTH = 1366
 HEIGHT = 768
 
 #Audio
-AUDIO_TIME = '5'
+AUDIO_TIME = '3'
 
 def return_score(log_list):
     #'Trial': status_trial, 'Rule': status_current_rule, 
@@ -141,18 +138,16 @@ def generate_card(shape_num, shape_color = (0,0,255), shape_pattern = [[0,0],[0,
 
 def main():
     #State machine internal variables
-    TOTAL_TRIALS = 15
+
     status_trial = 1
     status_rules = ['colour', 'shape', 'number']
     status_current_rule = 'colour'
     status_previous_rule = 'colour'
     status_selected_card = 0 #the answer given from the user
     status_log = list()
-
+    STATE_MACHINE = 0
     status_selected_card_array = np.zeros(3)
     status_correct_card_array = np.zeros(3)
-    STATE_MACHINE = 0
-    SIMULATOR = True
 
     while True:
         time.sleep(0.050) #50 msec sleep to evitate block
@@ -171,21 +166,21 @@ def main():
             my_deck, my_shape_patterns, my_shape_colors = return_deck()
             my_unique_hand = generate_hand()
             print "[0] Creating the text to speach object"
-            my_speech_to_text = Parser("./config.ini")
+            my_speech_to_text = Parser("../config/config.ini")
+            print "[0] Setting up the OpenCV variables"
+            cv2.namedWindow("test", cv2.WND_PROP_FULLSCREEN)          
+            cv2.setWindowProperty("test", cv2.WND_PROP_FULLSCREEN, cv2.cv.CV_WINDOW_FULLSCREEN)
             STATE_MACHINE = 1 #switching to next state
 
-        #STATE-1 Emotion checking
+        #STATE-1 Emotion checking and waiting for input
         if STATE_MACHINE == 1:
-
-            status_emotions = "neutral" #TODO update this rule
-            if(status_emotions == "happy" or status_emotions == "neutral"):
-                my_puppet.say_something("I see that you are happy, it is time for your weekly test!")
-            else:
-                print "[1] Emotion Check: the value associated with the emotion variable: '" + str(status_emotions) + "' is not recognised"
-            STATE_MACHINE = 2
+            #if cv2.waitKey(33) == ord('a'):
+                #print "[1] Switching to next state..."
+                STATE_MACHINE = 2
 
         #STATE-2 Display
         if STATE_MACHINE == 2:
+            print("")
             print "[3] Display: Showing the image on screen"
             #Call the function to display the game on the screen
             if(SIMULATOR == True):
@@ -198,13 +193,16 @@ def main():
                 center_c = (int((WIDTH / 8.) * 5), int(HEIGHT/4))
                 center_d = (int((WIDTH / 8.) * 7), int(HEIGHT/4))
                 img[center_a[1]-100:center_a[1]+100, center_a[0]-100:center_a[0]+100] = generate_card(my_unique_hand[0][0], my_shape_colors[my_unique_hand[0][1]], my_shape_patterns[my_unique_hand[0][2]])
+                cv2.putText(img, "1", (center_a[0]-20, center_a[1]+160), cv2.cv.CV_FONT_HERSHEY_SIMPLEX, 1.5, (0,0,0), 3)
 
                 img[center_b[1]-100:center_b[1]+100, center_b[0]-100:center_b[0]+100] = generate_card(my_unique_hand[1][0], my_shape_colors[my_unique_hand[1][1]], my_shape_patterns[my_unique_hand[1][2]])
+                cv2.putText(img, "2", (center_b[0]-20, center_b[1]+160), cv2.cv.CV_FONT_HERSHEY_SIMPLEX, 1.5, (0,0,0), 3)
 
                 img[center_c[1]-100:center_c[1]+100, center_c[0]-100:center_c[0]+100] = generate_card(my_unique_hand[2][0], my_shape_colors[my_unique_hand[2][1]], my_shape_patterns[my_unique_hand[2][2]])
+                cv2.putText(img, "3", (center_c[0]-20, center_c[1]+160), cv2.cv.CV_FONT_HERSHEY_SIMPLEX, 1.5, (0,0,0), 3)
 
                 img[center_d[1]-100:center_d[1]+100, center_d[0]-100:center_d[0]+100] = generate_card(my_unique_hand[3][0], my_shape_colors[my_unique_hand[3][1]], my_shape_patterns[my_unique_hand[3][2]])
-
+                cv2.putText(img, "4", (center_d[0]-20, center_d[1]+160), cv2.cv.CV_FONT_HERSHEY_SIMPLEX, 1.5, (0,0,0), 3)
 
                 print "[3] Generating the main card..."
                 #Generating a random array with the correct sequence: 1=colour, 2=number, 3=shape
@@ -214,17 +212,16 @@ def main():
                 #Drawing the symbol
                 img[center_main[1]-100:center_main[1]+100, center_main[0]-100:center_main[0]+100] = generate_card(my_deck[status_trial][0], my_shape_colors[my_deck[status_trial][1]], my_shape_patterns[my_deck[status_trial][2]])
 
-               
-
-                cv2.namedWindow("test", cv2.WND_PROP_FULLSCREEN)          
-                cv2.setWindowProperty("test", cv2.WND_PROP_FULLSCREEN, cv2.cv.CV_WINDOW_FULLSCREEN)
+                #Showing the image
                 cv2.imshow("test",img)
                 key=cv2.waitKey(1)
+
                 time.sleep(3)                           
             STATE_MACHINE = 3
 
         #STATE-3 Invite the user to play
         if STATE_MACHINE == 3:
+            print("")
             print "[3] Play: inviting the user!"
             random_number = np.random.randint(0, 4)
             if(random_number == 0):
@@ -241,7 +238,16 @@ def main():
 
         #STATE-4 Record the audio to get the answer
         if STATE_MACHINE == 4:
-            print "[4] Audio: starting audio recording"       
+            print("")
+            print "[4] Audio: starting audio recording" 
+            listening_img = cv2.imread("./listening.png")
+            listening_img = cv2.resize(listening_img, (100, 100)) 
+            img[HEIGHT-200:HEIGHT-100, WIDTH-200:WIDTH-100] = listening_img
+            #cv2.namedWindow("test", cv2.WND_PROP_FULLSCREEN)          
+            #cv2.setWindowProperty("test", cv2.WND_PROP_FULLSCREEN, cv2.cv.CV_WINDOW_FULLSCREEN)
+            cv2.imshow("test",img)
+            key=cv2.waitKey(1)
+      
             try:
                 #Record a file audio called test.wav for the specified seconds
                 subprocess.call(['arecord', 'test.wav', '-d', AUDIO_TIME], shell=False)
@@ -249,44 +255,83 @@ def main():
                 print "[4]: error downloading the audio file"
                 print "Error was: ",e
 
+            #Clean the listening symbol
+            print "[4] Displaying the clean image (no listening symbol)" 
+            no_listening_img = np.ones((100, 100)) * 255
+            img[HEIGHT-200:HEIGHT-100, WIDTH-200:WIDTH-100] = listening_img
+            cv2.imshow("test",img)
+            key=cv2.waitKey(1)
+
             #Sending the audio for analisys
             print "[4] Audio: analyzing the audio file!"
             my_text = my_speech_to_text.convertSpeechToText("./test.wav")
+            number_list = list()
             if(my_text != None):
-                print(my_speech_to_text.extractNumbersFromText(my_text))
-            status_selected_card = 1  #TODO remeber to check the status here
-            #If the feedback is good go to
+                print("my_text: ")
+		print(my_text)
+                number_list = my_speech_to_text.extractNumbersFromText(my_text)
+	    
+	    print(" Number List :")
+	    print(number_list)
+	    print(len(number_list))
+            if(len(number_list) == 0): 
+                status_selected_card = -1
+            elif(len(number_list)==1): 
+                number_answer = my_speech_to_text.text2int(number_list[0])
+                print("number_answer :" )
+                print(number_answer)
+                status_selected_card = number_answer
+            else:
+                status_selected_card = 0
+            print("[4] The answer given is: " + str(status_selected_card))
+
+
             print "[4] Audio: giving the answer!"
             if(status_selected_card == -1):
                 my_puppet.say_something("I did not understand your answer, can you repeat?")
                 STATE_MACHINE = 4
+                time.sleep(1)
             elif(status_selected_card == 0):
                 my_puppet.say_something("Try to choose a card, if you don't know the answer pick a random one.")
                 STATE_MACHINE = 4
+                time.sleep(1)
             elif(status_selected_card == 1):
-                status_selected_card_array = np.array(my_deck[0])
+                status_selected_card_array = np.array(my_unique_hand[0])
                 my_puppet.say_something("You choose the first card.")
                 STATE_MACHINE = 5
+                time.sleep(1)
             elif(status_selected_card == 2):
-                status_selected_card_array = np.array(my_deck[1])
+                status_selected_card_array = np.array(my_unique_hand[1])
                 my_puppet.say_something("You choose the second card.")
                 STATE_MACHINE = 5
+                time.sleep(1)
             elif(status_selected_card == 3):
-                status_selected_card_array = np.array(my_deck[2])
+                status_selected_card_array = np.array(my_unique_hand[2])
                 my_puppet.say_something("You choose the third card.")
                 STATE_MACHINE = 5
+                time.sleep(1)
             elif(status_selected_card == 4):
-                status_selected_card_array = np.array(my_deck[3])
+                status_selected_card_array = np.array(my_unique_hand[3])
                 my_puppet.say_something("You choose the fourth card.")
                 STATE_MACHINE = 5
+                time.sleep(1)
+            else:
+                print("The value of status_selected_card is not correct")
+                STATE_MACHINE = 5
+                time.sleep(1)               
+            #Sleep to have a better visualization of the
+            #clean background without listening
+            time.sleep(1)
 
         #STATE-5 Evaluating the human choice
         if STATE_MACHINE == 5:
+            print("")
+            print("[5] Evaluating the human choice...")
             #The rule choosen by the guy is given by the zero value
             #in the array given by the difference between the selected_card and the main card
             result_card_array = status_selected_card_array - status_main_card_array
             result_card_array = np.absolute(result_card_array)
-            status_user_rule = np.argmin(result_card_array)
+            status_user_rule = status_rules[np.argmin(result_card_array)]
             my_dict = {'Trial': status_trial, 'Rule': status_current_rule, 'PreviouRule': status_previous_rule, 'UserRule': status_user_rule }
             status_log.append(my_dict)
             if(status_trial % 10 == 0):
@@ -299,22 +344,28 @@ def main():
                 elif(status_current_rule == 'number'): 
                     status_current_rule='colour'
                     status_previous_rule = 'number'
+            #Printing generic info
+            print("Trial: " + str(status_trial))
+            print("Current Rule: " + str(status_current_rule))
+            print("Previous Rule: " + str(status_previous_rule))
+            print("User Rule: " + str(status_user_rule))
             #Switch state
             STATE_MACHINE = 6
 
         #STATE-6 Gives a feedback to the user (Correct / Not correct)
         if STATE_MACHINE == 6:          
             if(status_trial >= TOTAL_TRIALS):
+                print("")
                 print("[6] The game is finished...")
                 #All the correct answers are equal to zero
                 #The wrong answer are different from zero
                 #Turn the wrong values to 1 and find the score
                 total_score, percentage_score, perseveration_errors = return_score(status_log)
-                score_percentage = int((score / TOTAL_TRIALS) * 100)
-                my_puppet.say_something("The game is finished, you gave the correct answer " + str(int(score_percentage)) + " percent of the time")
+                my_puppet.say_something("The game is finished, you gave the correct answer " + str(int(percentage_score)) + " percent of the time")
                 my_puppet.say_something("You did a total of " + str(int(perseveration_errors)) + " perseveration errors")
                 my_puppet.say_something("I'm sending the results of the test to your doctor for further analisys.")
                 status_trial = 1
+                STATE_MACHINE = 1
             else:
                 if(status_current_rule==status_user_rule): my_puppet.say_something("Your choice is correct.")
                 else: my_puppet.say_something("I am sorry, yur choice is not correct.")
