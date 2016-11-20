@@ -1,6 +1,7 @@
 from watson_developer_cloud import SpeechToTextV1
-import json,os,sys
+import json,os,sys,requests,operator
 from configobj import ConfigObj
+
 import nltk
 
 class Parser:
@@ -8,7 +9,7 @@ class Parser:
 	def __init__(self,config):
 		self.config= config
 		self.configObject = ConfigObj(config)
-		
+	
 	def convertSpeechToText(self,audioFile):
 		# Read IBM watson SpeechToText service username and password from config file
 		username= self.configObject.get('ibm_speech_to_text_service_username')
@@ -19,17 +20,16 @@ class Parser:
 		audio_data = json.dumps(stt.recognize(audio_file, content_type="audio/wav", model='en-US_NarrowbandModel', continuous=True), indent=2)
 		print(audio_data)
 		audio_text=""
-                try:
+		try:
 		    audio_json_data = json.loads(audio_data)
 		    print(" Here is the audio text :::")
 		    if(len(audio_json_data["results"])!= 0 ):
 		    	audio_text = audio_json_data["results"][0]["alternatives"][0]["transcript"]
-			return(audio_text)
-		    else:
-			return(None)
+				#return(audio_text)
+		    else:return(None)
 		    
-                except Exception,e:
-                    print "Error was: ",e
+		except Exception as e:
+                    print( "Error was: ",e)
 		
 		
 	def extractNumbersFromText(self,audioText):
@@ -117,9 +117,91 @@ class Parser:
 				
 				return int(curstring)
 
-				
+	
+	# Function to identify emotions
+	def identifyEmotionFromImage(self,imagePath):
+		headers = dict()
+		headers['Ocp-Apim-Subscription-Key'] = self.configObject.get('ms_emotion_api_key')
+		headers['Content-Type'] = 'application/octet-stream'
+
+		json = None
+		params = None
+		with open( imagePath, 'rb' ) as f:
+			data = f.read()
+
+		results = self.processRequest( json, data, headers, params )
+
+		#json_result = json.loads(result)
+		print(" Length of results: ")
+		print(len(results))
+		if(len(results) > 0):
+			#print(results)
+			highest_scored_emotion_list = list()
+			for result in results: 
+				emotion_dict = result["scores"]
+				highest_scored_emotion = max(emotion_dict.items(), key=operator.itemgetter(1))[0]
+				highest_scored_emotion_list.append(highest_scored_emotion)
+			# Average emotion
+			emotion_count_dict = dict((i, highest_scored_emotion_list.count(i)) for i in highest_scored_emotion_list)
+			
+			# Highest scored emotion
+			highest_emotion = max(emotion_count_dict.items(), key=operator.itemgetter(1))[0]
+			return(highest_scored_emotion)
+		else:
+			print(" No emotion identified")
+			return(None)
+
+	
+	
+	# function to process the request
+	def processRequest(self,json, data, headers, params ):
+		"""
+		Helper function to process the request to Project Oxford
+
+		Parameters:
+		json: Used when processing images from its URL. See API Documentation
+		data: Used when processing image read from disk. See API Documentation
+		headers: Used to pass the key information and the data type request
+		"""
+		retries = 0
+		result = None
+		while True:
+			response = requests.request( 'post', self.configObject.get('ms_emotion_api_url'), json = json, data = data, headers = headers, params = params )
+			if response.status_code == 429: 
+				print( "Message: %s" % ( response.json()['error']['message'] ) )
+				if retries <= _maxNumRetries: 
+					time.sleep(1) 
+					retries += 1
+					continue
+				else: 
+					print( 'Error: failed after retrying!' )
+					break
+
+			elif response.status_code == 200 or response.status_code == 201:
+				if 'content-length' in response.headers and int(response.headers['content-length']) == 0: 
+					result = None 
+				elif 'content-type' in response.headers and isinstance(response.headers['content-type'], str): 
+					if 'application/json' in response.headers['content-type'].lower(): 
+						result = response.json() if response.content else None 
+					elif 'image' in response.headers['content-type'].lower(): 
+						result = response.content
+			else:
+				print( "Error code: %d" % ( response.status_code ) )
+				print( "Message: %s" % ( response.json()['error']['message'] ) )
+			break
+		return result
+
+	
 # Condition to check the digi
-#my_parser = Parser("../config/config.ini")			
+my_parser = Parser("../config/config.ini")			
+
+# Load raw image file into memory
+pathToFileInDisk = 'C:\\Users\\357677\\Documents\\Projects\\Hackathon\\images\\img2.jpg'
+
+with open( pathToFileInDisk, 'rb' ) as f:
+    data = f.read()
+
+print(my_parser.identifyEmotionFromImage(pathToFileInDisk))
 #numbers = my_parser.extractNumbersFromText("the number	one ")
 #print("--- Length of number list---------")
 
