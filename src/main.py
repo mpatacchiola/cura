@@ -164,8 +164,13 @@ def main():
             print "[0] Setting up the OpenCV variables"
             cv2.namedWindow("test", cv2.WND_PROP_FULLSCREEN)          
             cv2.setWindowProperty("test", cv2.WND_PROP_FULLSCREEN, cv2.cv.CV_WINDOW_FULLSCREEN)
+            print("")
+            print "[Q]uick start: jump the introduction."
+            print "[S]tart: standard start, with robot introduction."
+            print "[E]xit: close the window."
             STATE_MACHINE = 1 #switching to next state
-
+            print("")
+e
         #STATE-1 Emotion checking and waiting for input
         if STATE_MACHINE == 1:
             if cv2.waitKey(33) == ord('s'):
