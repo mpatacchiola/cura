@@ -23,7 +23,7 @@ from pepper import Puppet
 #Pepper robot global variables
 PEPPER_IP = "127.0.0.1"
 PEPPER_PORT = 48289
-TOTAL_TRIALS = 5
+TOTAL_TRIALS = 3
 SIMULATOR = True
 
 #Image resolution
@@ -31,21 +31,23 @@ WIDTH = 1366
 HEIGHT = 768
 
 #Audio
-AUDIO_TIME = '3'
+AUDIO_TIME = '4'
 
-def return_score(log_list):
+def return_score(log_list, is_printing=True):
     #'Trial': status_trial, 'Rule': status_current_rule, 
     #'PreviouRule': status_previous_rule, 'UserRule': status_user_rule
     total_trials = len(log_list)
-    total_correct = 0
-    total_perseveration_errors = 0
+    total_correct = 0.0
+    total_perseveration_errors = 0.0
     for dictionary in log_list:
+        if(is_printing==True): print(dictionary)
         if(dictionary['Rule'] == dictionary['UserRule']):
+            if(is_printing==True): print("Match: Rule="+dictionary['Rule'] + " UserRule=" + dictionary['UserRule'] )
             total_correct += 1
-        if(dictionary['Rule'] != dictionary['UserRule'] and dictionary['PreviouRule'] == dictionary['UserRule']):
-            total_perseveration_errors += 1
-    total_percentage_score = (total_correct / total_trials) * 100
-    return total_correct, total_percentage_score, total_perseveration_errors
+        else:
+            if(dictionary['PreviouRule'] == dictionary['UserRule']): total_perseveration_errors += 1
+    total_percentage_score = (total_correct / total_trials) * 100.0
+    return int(total_correct), int(total_percentage_score), int(total_perseveration_errors)
 
 def return_deck():
     shape_patterns = []
@@ -68,14 +70,6 @@ def return_deck():
     np.random.shuffle(new_deck)
     return new_deck, shape_patterns, shape_colors
 
-def return_random_card_id(card1, card2, card3, card4):
-    while(True):
-        colour = np.random.randint(0, 5)
-        shape = np.random.randint(0, 5)
-        number = np.random.randint(0, 5)
-        output_array = np.array([colour, shape, number])
-        if(output_array != card1 and output_array!=card2 and output_array!=card3 and output_array!=card4):
-            return np.array([colour, shpae, number])
 
 def generate_hand():
     c = [0,1,2,3]
@@ -174,8 +168,15 @@ def main():
 
         #STATE-1 Emotion checking and waiting for input
         if STATE_MACHINE == 1:
-            #if cv2.waitKey(33) == ord('a'):
-                #print "[1] Switching to next state..."
+            if cv2.waitKey(33) == ord('s'):
+                my_puppet.say_something("Welcome! My name is Pepper and today I'm here as part of the project cure. Today we will play a game. Actually this is not a game.")
+                my_puppet.say_something("This is the Wisconsin card sorting test. This test is a neuro psychological test which is widely used by clinical psychologists to test patients with brain injuries and mental illnesses.")
+                my_puppet.say_something("Your role is to find the right match for the card that I will show you on the screen.")
+                my_puppet.say_something("The cards could be matched by number, colour or shape of the symbols.")
+                my_puppet.say_something("Choose the card you think is the best match. Let's start!")
+                print "[1] Switching to next state..."
+                STATE_MACHINE = 2
+            if cv2.waitKey(33) == ord('q'):
                 STATE_MACHINE = 2
 
         #STATE-2 Display
@@ -192,21 +193,21 @@ def main():
                 center_b = (int((WIDTH / 8.) * 3), int(HEIGHT/4))
                 center_c = (int((WIDTH / 8.) * 5), int(HEIGHT/4))
                 center_d = (int((WIDTH / 8.) * 7), int(HEIGHT/4))
-                img[center_a[1]-100:center_a[1]+100, center_a[0]-100:center_a[0]+100] = generate_card(my_unique_hand[0][0], my_shape_colors[my_unique_hand[0][1]], my_shape_patterns[my_unique_hand[0][2]])
+                img[center_a[1]-100:center_a[1]+100, center_a[0]-100:center_a[0]+100] = generate_card(my_unique_hand[0][1], my_shape_colors[my_unique_hand[0][0]], my_shape_patterns[my_unique_hand[0][2]])
                 cv2.putText(img, "1", (center_a[0]-20, center_a[1]+160), cv2.cv.CV_FONT_HERSHEY_SIMPLEX, 1.5, (0,0,0), 3)
 
-                img[center_b[1]-100:center_b[1]+100, center_b[0]-100:center_b[0]+100] = generate_card(my_unique_hand[1][0], my_shape_colors[my_unique_hand[1][1]], my_shape_patterns[my_unique_hand[1][2]])
+                img[center_b[1]-100:center_b[1]+100, center_b[0]-100:center_b[0]+100] = generate_card(my_unique_hand[1][1], my_shape_colors[my_unique_hand[1][0]], my_shape_patterns[my_unique_hand[1][2]])
                 cv2.putText(img, "2", (center_b[0]-20, center_b[1]+160), cv2.cv.CV_FONT_HERSHEY_SIMPLEX, 1.5, (0,0,0), 3)
 
-                img[center_c[1]-100:center_c[1]+100, center_c[0]-100:center_c[0]+100] = generate_card(my_unique_hand[2][0], my_shape_colors[my_unique_hand[2][1]], my_shape_patterns[my_unique_hand[2][2]])
+                img[center_c[1]-100:center_c[1]+100, center_c[0]-100:center_c[0]+100] = generate_card(my_unique_hand[2][1], my_shape_colors[my_unique_hand[2][0]], my_shape_patterns[my_unique_hand[2][2]])
                 cv2.putText(img, "3", (center_c[0]-20, center_c[1]+160), cv2.cv.CV_FONT_HERSHEY_SIMPLEX, 1.5, (0,0,0), 3)
 
-                img[center_d[1]-100:center_d[1]+100, center_d[0]-100:center_d[0]+100] = generate_card(my_unique_hand[3][0], my_shape_colors[my_unique_hand[3][1]], my_shape_patterns[my_unique_hand[3][2]])
+                img[center_d[1]-100:center_d[1]+100, center_d[0]-100:center_d[0]+100] = generate_card(my_unique_hand[3][1], my_shape_colors[my_unique_hand[3][0]], my_shape_patterns[my_unique_hand[3][2]])
                 cv2.putText(img, "4", (center_d[0]-20, center_d[1]+160), cv2.cv.CV_FONT_HERSHEY_SIMPLEX, 1.5, (0,0,0), 3)
 
                 print "[3] Generating the main card..."
                 #Generating a random array with the correct sequence: 1=colour, 2=number, 3=shape
-                status_main_card_array = np.array(my_deck[status_trial])
+                #status_main_card_array = np.array(my_deck[status_trial])
                 #Getting the centre of the main card
                 center_main = ( int((WIDTH / 2.)), int((HEIGHT/4) * 3))
                 #Drawing the symbol
@@ -257,8 +258,8 @@ def main():
 
             #Clean the listening symbol
             print "[4] Displaying the clean image (no listening symbol)" 
-            no_listening_img = np.ones((100, 100)) * 255
-            img[HEIGHT-200:HEIGHT-100, WIDTH-200:WIDTH-100] = listening_img
+            no_listening_img = np.ones((100, 100, 3)) * 255
+            img[HEIGHT-200:HEIGHT-100, WIDTH-200:WIDTH-100] = no_listening_img
             cv2.imshow("test",img)
             key=cv2.waitKey(1)
 
@@ -288,13 +289,21 @@ def main():
 
             print "[4] Audio: giving the answer!"
             if(status_selected_card == -1):
-                my_puppet.say_something("I did not understand your answer, can you repeat?")
+                random_number = np.random.randint(0, 4)
+                if(random_number == 0):
+                    my_puppet.say_something("I did not understand your answer, can you repeat?")
+                if(random_number == 1):
+                    my_puppet.say_something("Did you say something? Please repeat.")
+                if(random_number == 2):
+                    my_puppet.say_something("What did you say? Can you repeat again please?")
+                if(random_number == 3):
+                    my_puppet.say_something("Repeat again when the listening symbol appears in the bottom right corner.")
                 STATE_MACHINE = 4
-                time.sleep(1)
+                time.sleep(2)
             elif(status_selected_card == 0):
-                my_puppet.say_something("Try to choose a card, if you don't know the answer pick a random one.")
+                my_puppet.say_something("Try to choose a single card, if you don't know the answer pick a random one.")
                 STATE_MACHINE = 4
-                time.sleep(1)
+                time.sleep(2)
             elif(status_selected_card == 1):
                 status_selected_card_array = np.array(my_unique_hand[0])
                 my_puppet.say_something("You choose the first card.")
@@ -329,12 +338,25 @@ def main():
             print("[5] Evaluating the human choice...")
             #The rule choosen by the guy is given by the zero value
             #in the array given by the difference between the selected_card and the main card
-            result_card_array = status_selected_card_array - status_main_card_array
-            result_card_array = np.absolute(result_card_array)
-            status_user_rule = status_rules[np.argmin(result_card_array)]
+            #result_card_array = status_selected_card_array - status_main_card_array
+            #result_card_array = np.absolute(result_card_array)
+            #status_user_rule = status_rules[np.argmin(result_card_array)]
+
+            if(status_current_rule=='colour' and status_selected_card_array[0] == my_deck[status_trial][0]): status_user_rule='colour'
+            elif(status_current_rule=='shape' and status_selected_card_array[1] == my_deck[status_trial][1]): status_user_rule='shape'
+            elif(status_current_rule=='number' and status_selected_card_array[2] == my_deck[status_trial][2]): status_user_rule='number'
+            else:
+                result_card_array = status_selected_card_array - my_deck[status_trial]
+                result_card_array = np.absolute(result_card_array)
+                if(np.amin(result_card_array) == 0): 
+                    status_user_rule = status_rules[np.argmin(result_card_array)]
+                else:
+                    status_user_rule = "None"
+
             my_dict = {'Trial': status_trial, 'Rule': status_current_rule, 'PreviouRule': status_previous_rule, 'UserRule': status_user_rule }
             status_log.append(my_dict)
             if(status_trial % 10 == 0):
+                print("[5] Switching to a new rule...")
                 if(status_current_rule == 'colour'): 
                     status_current_rule='shape'
                     status_previous_rule = 'colour'
@@ -346,6 +368,8 @@ def main():
                     status_previous_rule = 'number'
             #Printing generic info
             print("Trial: " + str(status_trial))
+            print("Selected Card Array: " + str(status_selected_card_array))
+            print("Main Card Array: " + str(my_deck[status_trial]))
             print("Current Rule: " + str(status_current_rule))
             print("Previous Rule: " + str(status_previous_rule))
             print("User Rule: " + str(status_user_rule))
@@ -362,14 +386,20 @@ def main():
                 #Turn the wrong values to 1 and find the score
                 total_score, percentage_score, perseveration_errors = return_score(status_log)
                 my_puppet.say_something("The game is finished, you gave the correct answer " + str(int(percentage_score)) + " percent of the time")
-                my_puppet.say_something("You did a total of " + str(int(perseveration_errors)) + " perseveration errors")
+                my_puppet.say_something("You did a total of " + str(perseveration_errors) + " perseveration errors")
                 my_puppet.say_something("I'm sending the results of the test to your doctor for further analisys.")
+                print("[6] Press 'S' to start a new game...")
                 status_trial = 1
                 STATE_MACHINE = 1
             else:
-                if(status_current_rule==status_user_rule): my_puppet.say_something("Your choice is correct.")
-                else: my_puppet.say_something("I am sorry, yur choice is not correct.")
-       
+                if(status_current_rule==status_user_rule):
+                    my_puppet.say_yes( 0.25, 0.2, 1.0) 
+                    my_puppet.say_something("Your choice is correct.")
+                    my_puppet.set_neutral(1.0)
+                else:
+                    my_puppet.say_no( 0.25, 0.2, 1.0)
+                    my_puppet.say_something("I am sorry, yur choice is not correct.")
+                    my_puppet.set_neutral(1.0)
                 status_trial += 1
                 STATE_MACHINE = 2
 
