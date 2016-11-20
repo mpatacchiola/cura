@@ -1,5 +1,5 @@
 from watson_developer_cloud import SpeechToTextV1
-import json,os,sys,requests,operator
+import json,os,sys,requests,operator,time
 from configobj import ConfigObj
 
 import nltk
@@ -165,6 +165,7 @@ class Parser:
 		"""
 		retries = 0
 		result = None
+		_maxNumRetries = 10
 		while True:
 			response = requests.request( 'post', self.configObject.get('ms_emotion_api_url'), json = json, data = data, headers = headers, params = params )
 			if response.status_code == 429: 
