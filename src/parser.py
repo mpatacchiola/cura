@@ -32,20 +32,29 @@ class Parser:
                     print "Error was: ",e
 		
 		
-	def extractNumbersFromText(self,audioText):
+	def extractNumbersFromText(audioText):
 		num_dict = ('first','second','third','four','1','2','3','4','one','two','three','fourth','for','zero','0')
 		numberList = list()
 		words = nltk.word_tokenize(audioText)
 		tokenized_words = [nltk.word_tokenize(word) for word in words]
 		tagged_words = [nltk.pos_tag(word) for word in tokenized_words]
-		for tag in tagged_words:
-			tagged_word = tag[0]
-			if tagged_word[1] == 'CD' or tagged_word[1] == 'RB' or tagged_word[1] == 'NN' or tagged_word[1] == 'JJ':
+		for index,tag in enumerate(tagged_words):
+			tagged_word = tagged_words[index][0]
+			if tagged_word[1] == 'JJ':
+				next_index= index+1
+				if len(tagged_words) > next_index and tagged_words[next_index][0][0] == 'one':
+						numberList.append(tagged_word[0])
+				else:
+					numberList.append(tagged_word[0])
+				
+			elif tagged_word[1] == 'CD' and tagged_words[index-1][0][1] == 'JJ':
+				print("-- do nothing----")
+			elif tagged_word[1] == 'CD' or tagged_word[1] == 'RB' or tagged_word[1] == 'NN' or tagged_word[1] == 'JJ':
 				if tagged_word[0] in num_dict:
-					print(tagged_word[0])
 					numberList.append(tagged_word[0])
 
 		return(numberList)			
+		
 		
 	# to convert number text to integer number
 	def text2int (textnum, numwords={}):
