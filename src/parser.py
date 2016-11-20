@@ -119,13 +119,15 @@ class Parser:
 
 	
 	# Function to identify emotions
-	def identifyEmotionFromImage(self,image):
+	def identifyEmotionFromImage(self,imagePath):
 		headers = dict()
 		headers['Ocp-Apim-Subscription-Key'] = self.configObject.get('ms_emotion_api_key')
 		headers['Content-Type'] = 'application/octet-stream'
 
 		json = None
 		params = None
+		with open( imagePath, 'rb' ) as f:
+			data = f.read()
 
 		results = self.processRequest( json, data, headers, params )
 
@@ -199,7 +201,7 @@ pathToFileInDisk = 'C:\\Users\\357677\\Documents\\Projects\\Hackathon\\images\\i
 with open( pathToFileInDisk, 'rb' ) as f:
     data = f.read()
 
-my_parser.identifyEmotionFromImage(data)
+print(my_parser.identifyEmotionFromImage(pathToFileInDisk))
 #numbers = my_parser.extractNumbersFromText("the number	one ")
 #print("--- Length of number list---------")
 
