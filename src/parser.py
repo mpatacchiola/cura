@@ -25,7 +25,7 @@ class Parser:
 		    print(" Here is the audio text :::")
 		    if(len(audio_json_data["results"])!= 0 ):
 		    	audio_text = audio_json_data["results"][0]["alternatives"][0]["transcript"]
-				#return(audio_text)
+			return(audio_text)
 		    else:return(None)
 		    
 		except Exception as e:
@@ -193,15 +193,15 @@ class Parser:
 
 	
 # Condition to check the digi
-my_parser = Parser("../config/config.ini")			
+#my_parser = Parser("../config/config.ini")			
 
 # Load raw image file into memory
-pathToFileInDisk = 'C:\\Users\\357677\\Documents\\Projects\\Hackathon\\images\\img2.jpg'
+#pathToFileInDisk = 'C:\\Users\\357677\\Documents\\Projects\\Hackathon\\images\\img2.jpg'
 
-with open( pathToFileInDisk, 'rb' ) as f:
-    data = f.read()
+#with open( pathToFileInDisk, 'rb' ) as f:
+    #data = f.read()
 
-print(my_parser.identifyEmotionFromImage(pathToFileInDisk))
+#print(my_parser.identifyEmotionFromImage(pathToFileInDisk))
 #numbers = my_parser.extractNumbersFromText("the number	one ")
 #print("--- Length of number list---------")
 

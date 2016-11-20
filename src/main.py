@@ -21,9 +21,9 @@ sys.path.insert(1, "../include/pynaoqi-python2.7-2.1.3.3-linux64") #import this 
 from pepper import Puppet
 
 #Pepper robot global variables
-PEPPER_IP = "127.0.0.1"
-PEPPER_PORT = 48289
-TOTAL_TRIALS = 3
+PEPPER_IP = "192.168.1.100"
+PEPPER_PORT = 9559
+TOTAL_TRIALS = 5
 SIMULATOR = True
 
 #Image resolution
@@ -174,9 +174,13 @@ def main():
                 my_puppet.say_something("Your role is to find the right match for the card that I will show you on the screen.")
                 my_puppet.say_something("The cards could be matched by number, colour or shape of the symbols.")
                 my_puppet.say_something("Choose the card you think is the best match. Let's start!")
-                print "[1] Switching to next state..."
+                print "[1] Switching to the next state..."
                 STATE_MACHINE = 2
+            if cv2.waitKey(33) == ord('e'):
+                print "[1] Closing the window..."
+                return
             if cv2.waitKey(33) == ord('q'):
+                print "[1] Quick start!"
                 STATE_MACHINE = 2
 
         #STATE-2 Display
@@ -217,7 +221,7 @@ def main():
                 cv2.imshow("test",img)
                 key=cv2.waitKey(1)
 
-                time.sleep(3)                           
+                time.sleep(2)                           
             STATE_MACHINE = 3
 
         #STATE-3 Invite the user to play
@@ -265,13 +269,16 @@ def main():
 
             #Sending the audio for analisys
             print "[4] Audio: analyzing the audio file!"
-            my_text = my_speech_to_text.convertSpeechToText("./test.wav")
-            number_list = list()
-            if(my_text != None):
-                print("my_text: ")
-		print(my_text)
-                number_list = my_speech_to_text.extractNumbersFromText(my_text)
-	    
+            try:
+                my_text = my_speech_to_text.convertSpeechToText("./test.wav")
+                number_list = list()
+                if(my_text != None):
+                    print("my_text: ")
+		    print(my_text)
+                    number_list = my_speech_to_text.extractNumbersFromText(my_text)
+	    except Exception as e:
+                print( "Error was: ",e)
+
 	    print(" Number List :")
 	    print(number_list)
 	    print(len(number_list))
@@ -393,13 +400,21 @@ def main():
                 STATE_MACHINE = 1
             else:
                 if(status_current_rule==status_user_rule):
-                    my_puppet.say_yes( 0.25, 0.2, 1.0) 
-                    my_puppet.say_something("Your choice is correct.")
-                    my_puppet.set_neutral(1.0)
+                    random_number = np.random.randint(0, 3)
+                    if(random_number == 0):
+                        my_puppet.say_something("Your choice is correct.")
+                    if(random_number == 1):
+                        my_puppet.say_something("Well done! Your answer is correct.")
+                    if(random_number == 2):
+                        my_puppet.say_something("You are right, that's the right answer.")
                 else:
-                    my_puppet.say_no( 0.25, 0.2, 1.0)
-                    my_puppet.say_something("I am sorry, yur choice is not correct.")
-                    my_puppet.set_neutral(1.0)
+                    random_number = np.random.randint(0, 3)
+                    if(random_number == 0):
+                        my_puppet.say_something("I am sorry, yur choice is not correct.")
+                    elif(random_number == 1):
+                        my_puppet.say_something("I am sorry, the answer is not correct. You can do better the next trial.")
+                    elif(random_number == 2):
+                        my_puppet.say_something("This time the answer is not correct. Try again!")
                 status_trial += 1
                 STATE_MACHINE = 2
 
